@@ -88,6 +88,22 @@ async function run() {
       const result = await roomCollection.find(query).toArray();
       res.send(result)
     })
+
+    // save a room in db
+    app.post('/room',async(req,res)=>{
+      const roomData  = req.body
+      const result = await roomCollection.insertOne(roomData)
+      res.send(result)
+    })
+
+    // get all rooms for host
+    app.get('/my-listings/:email', async (req, res) => {
+      const email = req.params.email;
+      let query = {'host.email' :email }
+      const result = await roomCollection.find(query).toArray();
+      res.send(result)
+    })
+
     // get a single room data for _id
     app.get('/room/:id', async (req, res) => {
       const id = req.params.id;
