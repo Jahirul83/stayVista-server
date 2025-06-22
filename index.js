@@ -104,6 +104,14 @@ async function run() {
       res.send(result)
     })
 
+    // delete a room
+    app.delete('/room/:id',async(req,res)=>{
+      const id = req.params.id
+      const query ={_id : new ObjectId(id)}
+      const result = await roomCollection.deleteOne(query)
+      res.send(result)
+    })
+
     // get a single room data for _id
     app.get('/room/:id', async (req, res) => {
       const id = req.params.id;
