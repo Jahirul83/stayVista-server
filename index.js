@@ -3,7 +3,7 @@ const app = express()
 require('dotenv').config()
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+const { MongoClient, ServerApiVersion, ObjectId, Timestamp } = require('mongodb')
 const jwt = require('jsonwebtoken')
 
 const port = process.env.PORT || 8000
@@ -50,6 +50,7 @@ async function run() {
   try {
 
     const roomCollection = client.db('stayvista').collection('rooms')
+    const usersCollection = client.db('stayvista').collection('users')
     // auth related api
     app.post('/jwt', async (req, res) => {
       const user = req.body
@@ -80,6 +81,33 @@ async function run() {
       }
     })
 
+    // save a user data in db
+    app.put('/user', async (req, res) => {
+      const user = req.body
+      const query = { email: user?.email }
+      // check if the user data is already exist in the database
+      const isExist = await usersCollection.find(query)
+      if (isExist) return res.send(isExist)
+
+
+      // save a user for first time
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: {
+          ...user,
+          timestamp: Date.now(),
+        }
+      }
+      const result = await usersCollection.updateOne(query, updateDoc, options)
+      res.send(result)
+    })
+
+    // get all users from db
+    app.get('/users', async (req, res) => {
+      const result = await usersCollection.find().toArray()
+      res.send(result)
+    })
+
     // get all rooms from db
     app.get('/rooms', async (req, res) => {
       const category = req.query.category;
@@ -90,8 +118,8 @@ async function run() {
     })
 
     // save a room in db
-    app.post('/room',async(req,res)=>{
-      const roomData  = req.body
+    app.post('/room', async (req, res) => {
+      const roomData = req.body
       const result = await roomCollection.insertOne(roomData)
       res.send(result)
     })
@@ -99,15 +127,15 @@ async function run() {
     // get all rooms for host
     app.get('/my-listings/:email', async (req, res) => {
       const email = req.params.email;
-      let query = {'host.email' :email }
+      let query = { 'host.email': email }
       const result = await roomCollection.find(query).toArray();
       res.send(result)
     })
 
     // delete a room
-    app.delete('/room/:id',async(req,res)=>{
+    app.delete('/room/:id', async (req, res) => {
       const id = req.params.id
-      const query ={_id : new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await roomCollection.deleteOne(query)
       res.send(result)
     })
